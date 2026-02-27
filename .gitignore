@@ -3,6 +3,10 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+# Configurações locais de desenvolvimento (Segredos)
+**/appsettings.Development.json
+**/appsettings.Local.json
+
 # dotenv files
 .env
 

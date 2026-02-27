@@ -32,7 +32,7 @@ namespace NotificationService.Application.Services
             await _emailSender.SendEmailAsync(videoEvent.UserEmail, subject, body);
         }
 
-        private NotificationType MapStatusToTupe(string status) => status.ToLower() switch
+        private NotificationType MapStatusToType(string status) => status.ToLower() switch
         {
             "uploaded" => NotificationType.VideoUploaded,
             "processed" => NotificationType.VideoProcessed,
