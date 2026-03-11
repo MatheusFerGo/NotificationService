@@ -2,10 +2,13 @@
 {
     public record VideoEvent
     (
-        Guid UserId,
-        string UserEmail,
-        Guid VideoId,
+        string UserId,
+        string Name,
+        string Email,
+        string VideoId,
+        string VideoTitle,
         string Status,
-        string? Message
+        string SendMailOnSuccess,
+        string SendMailOnFailure
     );
 }

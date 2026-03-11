@@ -6,8 +6,6 @@ using NotificationService.Application.Services;
 using NotificationService.Domain.Interfaces;
 using NotificationService.Infrastructure.Adapters;
 using NotificationService.Infrastructure.Configurations;
-using NotificationService.Infrastructure.ExternalServices;
-using Refit;
 
 namespace NotificationService.Infrastructure;
 
@@ -28,14 +26,6 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IEmailSender, EmailSenderAdapter>();
-        services.AddScoped<IUserProfileService, UserProfileServiceAdapter>();
-
-        var userApiUrl = configuration["ExternalApis:UserApiUrl"];
-        if (string.IsNullOrEmpty(userApiUrl))
-            throw new InvalidOperationException("User API URL is missing in configuration.");
-
-        services.AddRefitClient<IUserApi>()
-                .ConfigureHttpClient(c => c.BaseAddress = new Uri(userApiUrl));
 
         services.AddScoped<INotificationUseCase, NotificationUseCase>();
 

@@ -2,8 +2,7 @@
 {
     public enum NotificationType
     {
-        VideoUploaded,
-        VideoProcessed,
+        Success,
         Error
     }
 }

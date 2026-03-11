@@ -1,17 +1,17 @@
 ﻿using NotificationService.Application.DTOs;
+using NotificationService.Application.Interfaces;
+using NotificationService.Domain.Entities;
 using NotificationService.Domain.Enums;
 using NotificationService.Domain.Interfaces;
 
 namespace NotificationService.Application.Services
 {
-    public class NotificationUseCase
+    public class NotificationUseCase : INotificationUseCase
     {
-        private readonly IUserProfileService _userProfileService;
         private readonly IEmailSender _emailSender;
 
-        public NotificationUseCase(IUserProfileService userProfileService, IEmailSender emailSender)
+        public NotificationUseCase(IEmailSender emailSender)
         {
-            _userProfileService = userProfileService;
             _emailSender = emailSender;
         }
 
@@ -19,23 +19,38 @@ namespace NotificationService.Application.Services
         {
             var notificationType = MapStatusToType(videoEvent.Status);
 
-            bool isEnabled = await _userProfileService.IsNotificationEnabledAsync(videoEvent.UserId, notificationType);
+            var notification = new Notification(
+                videoEvent.UserId,
+                videoEvent.Name,
+                videoEvent.Email,
+                videoEvent.VideoId,
+                videoEvent.VideoTitle,
+                notificationType,
+                videoEvent.SendMailOnSuccess,
+                videoEvent.SendMailOnFailure
+            );
 
-            if (!isEnabled)
+            if (!notification.ShouldSendEmail())
             {
-                return;
+                return; // Encerra o processamento silenciosamente se a flag for "N"
             }
 
-            string subject = $"FIAP X - Status do Vídeo: {videoEvent.Status}";
-            string body = $"Olá! Seu vídeo {videoEvent.VideoId} está com o status: {videoEvent.Status}. \n{videoEvent.Message}";
+            string subject = notificationType == NotificationType.Success
+                ? "FIAP Hackathon - Vídeo processado com sucesso!"
+                : "FIAP Hackathon - Falha ao processar seu vídeo";
 
-            await _emailSender.SendEmailAsync(videoEvent.UserEmail, subject, body);
+            string statusText = notificationType == NotificationType.Success
+                ? "foi processado com sucesso e já está disponível"
+                : "apresentou um erro durante o processamento";
+
+            string body = $"Olá {notification.UserName}!\n\nSeu vídeo '{notification.VideoTitle}' (ID: {notification.VideoId}) {statusText}.";
+
+            await _emailSender.SendEmailAsync(notification.UserEmail, subject, body);
         }
 
-        private NotificationType MapStatusToType(string status) => status.ToLower() switch
+        private NotificationType MapStatusToType(string status) => status?.ToLower() switch
         {
-            "uploaded" => NotificationType.VideoUploaded,
-            "processed" => NotificationType.VideoProcessed,
+            "success" => NotificationType.Success,
             _ => NotificationType.Error
         };
     }
