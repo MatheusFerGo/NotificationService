@@ -4,7 +4,7 @@ metadata:
   name: notification-worker-config
   namespace: hackathon-fiap
 data:
-  EMAIL_SENDER: "#{EMAIL_SENDER}#"
+  AzureSettings__Email__SenderAddress: "#{EMAIL_SENDER}#"
   AzureSettings__Email__ConnectionString: "#{EMAIL_CONNECTION}#"
   ServiceBus__SuccessQueue: "#{SUCCESS_QUEUE}#"
   ServiceBus__ErrorQueue: "#{ERROR_QUEUE}#"
