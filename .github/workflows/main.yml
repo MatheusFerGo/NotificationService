@@ -2,7 +2,9 @@ name: CI/CD - Notification Worker
 
 on:
   push:
-    branches: [ main, development, 'release/**' ]
+    branches: 
+      - main
+      - 'release/**'
 
 jobs:
   build:
@@ -30,7 +32,8 @@ jobs:
 
   deploy:
     needs: [build, test]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
+    # Agora a condição de branch está explícita aqui também para segurança extra
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
