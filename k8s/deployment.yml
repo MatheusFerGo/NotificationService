@@ -13,6 +13,8 @@ spec:
       labels:
         app: notification-worker
     spec:
+      imagePullSecrets:
+        - name: acr-secret
       containers:
       - name: worker
         image: #{FULL_IMAGE_NAME}#
