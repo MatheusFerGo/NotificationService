@@ -1,0 +1,78 @@
+name: CI/CD - Notification Worker
+
+on:
+  push:
+    branches: 
+      - main
+      - release
+      - 'release/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Build
+        run: dotnet build -c Release
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+  deploy:
+    needs: [build, test]
+    # Agora a condição de branch está explícita aqui também para segurança extra
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build and Push to ACR
+        run: |
+          az acr login --name ${{ vars.ACR_NAME }}
+          docker build -t ${{ vars.ACR_LOGIN_SERVER }}/notification-worker:${{ github.sha }} .
+          docker push ${{ vars.ACR_LOGIN_SERVER }}/notification-worker:${{ github.sha }}
+
+      - name: Replace tokens
+        uses: cschleiden/replace-tokens@v1
+        with:
+          files: 'k8s/*.yml'
+        env:
+          FULL_IMAGE_NAME: ${{ vars.ACR_LOGIN_SERVER }}/notification-worker:${{ github.sha }}
+          SERVICEBUS_CONNECTION: ${{ secrets.SERVICEBUS_CONNECTION }}
+          EMAIL_CONNECTION: ${{ secrets.EMAIL_CONNECTION }}
+          EMAIL_SENDER: ${{ vars.EMAIL_SENDER }}
+          SUCCESS_QUEUE: ${{ vars.SUCCESS_QUEUE }}
+          ERROR_QUEUE: ${{ vars.ERROR_QUEUE }}
+          ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+
+      - uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ vars.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ vars.AKS_CLUSTER_NAME }}
+
+      - name: Deploy to K8s
+        uses: Azure/k8s-deploy@v4
+        with:
+          namespace: hackathon-fiap
+          manifests: |
+            k8s/configmap.yml
+            k8s/secrets.yml
+            k8s/deployment.yml
+          images: |
+            ${{ vars.ACR_LOGIN_SERVER }}/notification-worker:${{ github.sha }} 

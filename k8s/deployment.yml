@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-worker
+  namespace: hackathon-fiap
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notification-worker
+  template:
+    metadata:
+      labels:
+        app: notification-worker
+    spec:
+      containers:
+      - name: worker
+        image: #{FULL_IMAGE_NAME}#
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        env:
+        - name: SERVICEBUS_CONNECTION
+          valueFrom: { secretKeyRef: { name: worker-secrets, key: SERVICEBUS_CONNECTION } }
+        - name: EMAIL_CONNECTION
+          valueFrom: { secretKeyRef: { name: worker-secrets, key: EMAIL_CONNECTION } }
+        envFrom:
+        - configMapRef: { name: notification-worker-config }

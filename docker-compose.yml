@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  notification-worker:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: notification-worker-local
+    environment:
+      - ConnectionStrings__ServiceBus=${SERVICEBUS_CONNECTION}
+      - AzureSettings__Email__ConnectionString=${EMAIL_CONNECTION}
+      - AzureSettings__Email__SenderAddress=${EMAIL_SENDER}
+      
+      - ServiceBus__SuccessQueue=${SUCCESS_QUEUE}
+      - ServiceBus__ErrorQueue=${ERROR_QUEUE}
+    restart: unless-stopped
